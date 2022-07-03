@@ -28,7 +28,11 @@ body {
 
 .App {
   font-family: sans-serif;
-  text-align: center;
+  /* text-align: center; */
+}
+
+.pageBreak {
+  page-break-after: always;
 }
 
 h1 {
