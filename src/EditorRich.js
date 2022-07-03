@@ -172,6 +172,10 @@ export default function EditorRich() {
   return (
     <>
       <Container>
+        <Row className=" text-center">
+          <h1>Worksheet</h1>
+        </Row>
+
         <Row>
           <LexicalComposer initialConfig={editorConfig}>
             <Col>
