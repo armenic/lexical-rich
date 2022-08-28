@@ -1,44 +1,49 @@
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  CAN_REDO_COMMAND,
-  CAN_UNDO_COMMAND,
-  REDO_COMMAND,
-  UNDO_COMMAND,
-  SELECTION_CHANGE_COMMAND,
-  FORMAT_TEXT_COMMAND,
-  FORMAT_ELEMENT_COMMAND,
-  $getSelection,
-  $isRangeSelection,
-  $createParagraphNode,
-  $getNodeByKey
-} from "lexical";
-import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
-import {
-  $isParentElementRTL,
-  $wrapLeafNodesInElements,
-  $isAtNodeEnd
-} from "@lexical/selection";
-import { $getNearestNodeOfType, mergeRegister } from "@lexical/utils";
-import {
-  INSERT_ORDERED_LIST_COMMAND,
-  INSERT_UNORDERED_LIST_COMMAND,
-  REMOVE_LIST_COMMAND,
-  $isListNode,
-  ListNode
-} from "@lexical/list";
-import { createPortal } from "react-dom";
-import {
-  $createHeadingNode,
-  $createQuoteNode,
-  $isHeadingNode
-} from "@lexical/rich-text";
 import {
   $createCodeNode,
   $isCodeNode,
+  getCodeLanguages,
   getDefaultCodeLanguage,
-  getCodeLanguages
 } from "@lexical/code";
+import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
+import {
+  $isListNode,
+  INSERT_ORDERED_LIST_COMMAND,
+  INSERT_UNORDERED_LIST_COMMAND,
+  ListNode,
+  REMOVE_LIST_COMMAND,
+} from "@lexical/list";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import {
+  $createHeadingNode,
+  $createQuoteNode,
+  $isHeadingNode,
+} from "@lexical/rich-text";
+import {
+  $isAtNodeEnd,
+  $isParentElementRTL,
+  $wrapLeafNodesInElements,
+} from "@lexical/selection";
+import { INSERT_TABLE_COMMAND } from "@lexical/table";
+import { $getNearestNodeOfType, mergeRegister } from "@lexical/utils";
+import {
+  $createParagraphNode,
+  $getNodeByKey,
+  $getSelection,
+  $isRangeSelection,
+  CAN_REDO_COMMAND,
+  CAN_UNDO_COMMAND,
+  FORMAT_ELEMENT_COMMAND,
+  FORMAT_TEXT_COMMAND,
+  REDO_COMMAND,
+  SELECTION_CHANGE_COMMAND,
+  UNDO_COMMAND,
+} from "lexical";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import useModal from "../hooks/useModal";
+import Button from "../ui/Button";
+import DropDown, { DropDownItem } from "../ui/DropDown";
+import TextInput from "../ui/TextInput";
 
 const LowPriority = 1;
 
@@ -49,7 +54,7 @@ const supportedBlockTypes = new Set([
   "h1",
   "h2",
   "ul",
-  "ol"
+  "ol",
 ]);
 
 const blockTypeToBlockName = {
@@ -62,7 +67,7 @@ const blockTypeToBlockName = {
   ol: "Numbered List",
   paragraph: "Normal",
   quote: "Quote",
-  ul: "Bulleted List"
+  ul: "Bulleted List",
 };
 
 function Divider() {
@@ -256,7 +261,7 @@ function BlockOptionsDropdownList({
   editor,
   blockType,
   toolbarRef,
-  setShowBlockOptionsDropDown
+  setShowBlockOptionsDropDown,
 }) {
   const dropDownRef = useRef(null);
 
@@ -415,16 +420,39 @@ function BlockOptionsDropdownList({
   );
 }
 
+function InsertTableDialog({ activeEditor, onClose }) {
+  const [rows, setRows] = useState("5");
+  const [columns, setColumns] = useState("5");
+
+  const onClick = () => {
+    activeEditor.dispatchCommand(INSERT_TABLE_COMMAND, { columns, rows });
+    onClose();
+  };
+
+  return (
+    <>
+      <TextInput label="No of rows" onChange={setRows} value={rows} />
+      <TextInput label="No of columns" onChange={setColumns} value={columns} />
+      <div
+        className="ToolbarPlugin__dialogActions"
+        data-test-id="table-model-confirm-insert"
+      >
+        <Button onClick={onClick}>Confirm</Button>
+      </div>
+    </>
+  );
+}
+
 export default function ToolbarPlugin() {
   const [editor] = useLexicalComposerContext();
+  const [activeEditor, setActiveEditor] = useState(editor);
   const toolbarRef = useRef(null);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [blockType, setBlockType] = useState("paragraph");
   const [selectedElementKey, setSelectedElementKey] = useState(null);
-  const [showBlockOptionsDropDown, setShowBlockOptionsDropDown] = useState(
-    false
-  );
+  const [showBlockOptionsDropDown, setShowBlockOptionsDropDown] =
+    useState(false);
   const [codeLanguage, setCodeLanguage] = useState("");
   const [isRTL, setIsRTL] = useState(false);
   const [isLink, setIsLink] = useState(false);
@@ -433,6 +461,7 @@ export default function ToolbarPlugin() {
   const [isUnderline, setIsUnderline] = useState(false);
   const [isStrikethrough, setIsStrikethrough] = useState(false);
   const [isCode, setIsCode] = useState(false);
+  const [modal, showModal] = useModal();
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -585,6 +614,27 @@ export default function ToolbarPlugin() {
           <Divider />
         </>
       )}
+      <DropDown
+        buttonClassName="toolbar-item spaced"
+        buttonLabel="Insert"
+        buttonAriaLabel="Insert specialized editor node"
+        buttonIconClassName="icon plus"
+      >
+        <DropDownItem
+          onClick={() => {
+            showModal("Insert Table", (onClose) => (
+              <InsertTableDialog
+                activeEditor={activeEditor}
+                onClose={onClose}
+              />
+            ));
+          }}
+          className="item"
+        >
+          <i className="icon table" />
+          <span className="text">Table</span>
+        </DropDownItem>
+      </DropDown>
       {blockType === "code" ? (
         <>
           <Select
@@ -689,7 +739,7 @@ export default function ToolbarPlugin() {
             aria-label="Justify Align"
           >
             <i className="format justify-align" />
-          </button>{" "}
+          </button>
         </>
       )}
     </div>

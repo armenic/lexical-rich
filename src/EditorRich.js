@@ -11,6 +11,7 @@ import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import { TablePlugin } from "@lexical/react/LexicalTablePlugin";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { TableCellNode, TableNode, TableRowNode } from "@lexical/table";
 import { CLEAR_HISTORY_COMMAND } from "lexical";
@@ -20,6 +21,8 @@ import { useReactToPrint } from "react-to-print";
 import AutoLinkPlugin from "./plugins/AutoLinkPlugin";
 import CodeHighlightPlugin from "./plugins/CodeHighlightPlugin";
 import ListMaxIndentLevelPlugin from "./plugins/ListMaxIndentLevelPlugin";
+import TableCellActionMenuPlugin from "./plugins/TableActionMenuPlugin";
+import TableCellResizer from "./plugins/TableCellResizer";
 import ToolbarPlugin from "./plugins/ToolbarPlugin";
 import ExampleTheme from "./themes/ExampleTheme";
 
@@ -199,6 +202,9 @@ export default function EditorRich() {
                     onChange={onLexChange}
                     ignoreSelectionChange={true}
                   />
+                  <TablePlugin />
+                  <TableCellActionMenuPlugin />
+                  <TableCellResizer />
                   <HistoryPlugin />
                   <AutoFocusPlugin />
                   <CodeHighlightPlugin />
